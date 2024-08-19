@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+My Cart
+{% endblock title %}
+
+{% block content %}
+<style>
+/* Hide the up and down arrows in number input fields */
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.quantity-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.quantity-input {
+    width: 70px;
+    text-align: center;
+    margin: 0 5px;
+}
+
+.cart-items-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.cart-item {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    height: 100%; /* Ensure the card takes up full height of its container */
+}
+
+.card img {
+    height: 250px; /* Set a fixed height */
+    width: 100%; /* Ensure images take full width */
+    object-fit: contain;
+    margin-top: 10px;
+}
+
+.card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    text-align: center;
+    flex-grow: 1; /* Take up remaining space */
+    align-self: stretch; /* Ensure consistent height */
+}
+
+.card-title {
+    flex-grow: 1; /* Allow the title to grow and take up available space */
+    display: flex;
+    align-items: center; /* Center the text vertically */
+    justify-content: center; /* Center the text horizontally */
+    text-align: center;
+}
+
+/* Responsive design */
+@media (max-width: 575px) { /* For phones */
+    .cart-item {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .card {
+        flex-direction: row;
+        width: 100%;
+        height: auto;
+        overflow: hidden;
+    }
+    .card img {
+        width: 40%;
+        height: auto;
+        max-height: none; /* Allow height to adjust with width */
+        max-width: none;  /* Allow width to be 40% */
+        margin-top: 0;
+    }
+    .card-body {
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        text-align: left;
+        margin-left: 10px;
+        width: 60%; /* Take the remaining width */
+    }
+}
+
+/* Add this CSS to your stylesheet */
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3; /* Light grey */
+    border-top: 5px solid #3498db; /* Blue color */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Keyframes for spinning animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
+@media (min-width: 576px) and (max-width: 991px) { /* For tablets */
+    .cart-item {
+        flex: 1 1 calc(50% - 1rem);
+    }
+}
+
+@media (min-width: 992px) { /* For desktops */
+    .cart-item {
+        flex: 1 1 calc(33.333% - 1rem);
+    }
+}
+
+
+</style>
+
+<div class="container mt-5">
+    <h1>My Shopping Cart</h1>
+
+    <div id="cart-message"></div>
+    <div id="cart-items" class="row">
+        <!-- Cart items will be dynamically inserted here -->
+    </div>
+    <div id="cart-total" class="row text-right" style="display: none;">
+        <div class="col-12">
+            <h3 class="text-danger">Total: $<span id="total-price"></span></h3>
+            <a id="checkout-button" href="#" class="btn btn-primary">Checkout</a>
+
+        </div>
+    </div>
+</div>
+
+
+<script>
+    const checkoutUrl = "{% url 'orders:confirm_address' %}";
+</script>
+
+
+<script src="{% static 'js/carts/cartAuth.js' %}"></script>
+
+{% endblock content %}

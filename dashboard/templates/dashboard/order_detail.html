@@ -1,0 +1,188 @@
+{% extends "dashboard_base.html" %}
+{% block title %}
+    Dashboard | Order Detail #{{ order.id }}
+{% endblock title %}
+
+{% block content %}
+<a href="{% url 'dashboard:order' %}" class="btn btn-secondary"><i class="fa fa-backward"></i></a>
+<div class="">
+    <h2>Order Detail</h2>
+    
+    <!-- Print Button -->
+    <div class="text-right mb-3">
+        <button class="btn btn-primary" onclick="printOrder()"><i class="fa-solid fa-print"></i></button>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <table class="table">
+                <tr>
+                    <th>Order ID</th>
+                    <td><span class="font-weight-bold">#{{ order.id }}</span></td>
+                </tr>
+                <tr>
+                    <th>Ordered Date</th>
+                    <td>{{ order.ordered_date }}</td>
+                </tr>
+                <tr>
+                    <th>Total Price</th>
+                    <td><span class="text-danger font-weight-bold"><h4 class="text-danger">${{ order.total_price }}</h4></span></td>
+                </tr>
+                <tr>
+                    <th>Status</th>
+                    <td>
+                        {% if order.status == 'Pending' %}
+                            <span class="badge bg-warning">{{ order.get_status_display }}</span>
+                        {% elif order.status == 'Completed' %}
+                            <span class="badge bg-success">{{ order.get_status_display }}</span>
+                        {% elif order.status == 'Cancelled' %}
+                            <span class="badge bg-danger">{{ order.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Ordered By</th>
+                    <td>{{ order.user.username }}</td>
+                </tr>
+                <tr>
+                    <th>Payment Method</th>
+                    <td>{{ order.get_payment_method_display }}</td>
+                </tr>
+                
+            </table>
+        </div>
+        <div class="col-md-6">
+            <table class="table">
+                <tr>
+                    <th>Address</th>
+                    <td>
+                        {% if order.order_address %}
+                            Address 1: {{ order.order_address.address1 }}<br> 
+                            {% if order.order_address.address2 %}
+                                Address 2: {{ order.order_address.address2 }}<br> 
+                            {% endif %}
+                            City: {{ order.order_address.city }}<br>
+                            Province: {{ order.order_address.province }}<br>
+                            Phone number: {{ order.order_address.phone }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>QR Code</th>
+                    <td>
+                        {% if order.qr_code %}
+                        <img src="{{ order.qr_code.url }}" alt="QR Code" width="100" height="100">
+                        {% else %}
+                        N/A
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Bank Receipt</th>
+                    <td>
+                        {% if order.receipt %}
+                            <a href="{{ order.receipt.url }}" data-bs-toggle="modal" data-bs-target="#receiptModal">
+                                <img src="{{ order.receipt.url }}" alt="Receipt" width="100" height="100" style="cursor: pointer; object-fit:contain;">
+                            </a>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+        {% if order.status == 'Completed' and delivery_staff %}
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h3>Delivery Information</h3>
+                <table class="table">
+                    <tr>
+                        <th>Delivered by</th>
+                        <td>{{ delivery_staff.user.username }}</td>
+                    </tr>
+                    <tr>
+                        <th>Phone Number</th>
+                        <td>{{ delivery_staff.phone_number|default:"N/A" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Assigned at</th>
+                        <td>{{ delivery_assigned_at }}</td>
+                    </tr>
+                    <tr>
+                        <th>Completed at</th>
+                        <td>{{ delivery_completed_at }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <h3>Order Items</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Product</th>
+                <th>Image</th>
+                <th>Quantity</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.orderhistoryitem_set.all %}
+            <tr>
+                <td>{{ item.product.id }}</td>
+                <td>{{ item.product.name }} {{ item.product.model }} {{ item.product.year }}</td>
+                <td>
+                    {% if item.product.images.all %}
+                        {% with first_image=item.product.images.first %}
+                        <img src="{{ first_image.image.url }}" alt="{{ item.product.name }}" width="120">
+                        {% endwith %}
+                    {% else %}
+                        <p>no image</p>
+                    {% endif %}
+                </td>
+                <td>{{ item.quantity }}</td>
+                <td>${{ item.subtotal }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<!-- Modal for receipt -->
+{% if order.receipt %}
+<div class="modal fade" id="receiptModal" tabindex="-1" aria-labelledby="receiptModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="receiptModalLabel">Receipt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body d-flex justify-content-center align-items-center">
+                <img src="{{ order.receipt.url }}" alt="Receipt" class="img-fluid" style="max-width: 60%; height: auto;">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+
+<!-- JavaScript for Print Functionality -->
+<script>
+function printOrder() {
+    window.print();
+}
+</script>
+
+
+
+{% endblock %}

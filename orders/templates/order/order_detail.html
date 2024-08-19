@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+Order Detail - {{ order.id }}
+{% endblock title %}
+
+{% block content %}
+
+
+<style>
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin-top: 20px;
+    }
+
+    .table {
+        width: 100%;
+        max-width: 100%;
+        margin-bottom: 1rem;
+        background-color: transparent;
+    }
+
+    .table thead th {
+        background-color: var(--fourth-color);
+        color:#fff;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .table td,
+    .table th {
+        padding: 8px;
+        vertical-align: middle;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .table img {
+        max-width: 100px;
+        height: auto;
+    }
+
+    @media (max-width: 767px) {
+        .table-responsive {
+            -webkit-overflow-scrolling: touch;
+            overflow-x: auto;
+        }
+    }
+</style>
+<div class="text-right mb-3">
+    <button class="btn btn-success mr-5" onclick="downloadReceipt()"><i class="fa-solid fa-download"></i> Download as Image</button>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <h1>Order No. #{{ order.id }}</h1>
+            <p><strong>Ordered Date:</strong> {{ order.ordered_date }}</p>
+            
+            <!-- Show Payment Method -->
+            <p><strong>Payment Method:</strong> 
+                {% if order.payment_method == 'paypal' %}
+                    PayPal
+                {% elif order.payment_method == 'credit_card' %}
+                    Credit Card
+                {% elif order.payment_method == 'aba_bank' %}
+                    ABA Bank
+                {% elif order.payment_method == 'acleda_bank' %}
+                    ACLEDA Bank
+                {% elif order.payment_method == 'wing_bank' %}
+                    Wing Bank
+                {% else %}
+                    Not specified
+                {% endif %}
+
+            </p>
+            {% if order.status == 'Pending' %}
+            <p><strong>Status:</strong> <span style="color: orange;">{{ order.status }}</span></p>
+            {% elif order.status == 'Completed' %}
+            <p><strong>Status:</strong> <span style="color: green;">{{ order.status }}</span></p>
+            {% elif order.status == 'Cancelled' %}
+            <p><strong>Status:</strong> <span style="color: red;">{{ order.status }}</span></p>
+            {% endif %}
+            
+            {% if order.status == 'Completed' and delivery_staff %}
+            <h2>Delivery Information</h2>
+            <p><strong>Delivered by:</strong> {{ delivery_staff.user.username }}</p>
+            <p><strong>Phone Number:</strong> {{ delivery_staff.phone_number|default:"N/A" }}</p>
+            <p><strong>Assigned at:</strong> {{ delivery_assigned_at }}</p>
+            <p><strong>Completed at:</strong> {{ delivery_completed_at }}</p>
+            {% endif %}
+        </div>
+        <div class="col-md-6">
+            {% if qr_code_url %}
+            <img src="{{ qr_code_url }}" alt="QR Code" width="200" class="img-fluid">
+            {% endif %}
+        </div>
+    </div>
+
+    <h2>Products Ordered:</h2>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Product</th>
+                    <th>Model</th>
+                    <th>Year</th>
+                    <th>Price per Unit</th>
+                    <th>Quantity</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.orderhistoryitem_set.all %}
+                <tr>
+                    <td>
+                        {% if item.product.images.all %}
+                        {% with first_image=item.product.images.first %}
+                        <img src="{{ first_image.image.url }}" alt="{{ item.product.name }}" width="120">
+                        {% endwith %}
+                        {% else %}
+                        <p>No image</p>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.product.name }}</td>
+                    <td>{{ item.product.model }}</td>
+                    <td>{{ item.product.year }}</td>
+                    <td>${{ item.product.price }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>${{ item.subtotal }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <h3 class="text-right text-danger"><strong class="text-dark">Total Price:</strong> ${{ order.total_price }}</h3>
+</div>
+
+
+<script>
+    function downloadReceipt() {
+        // Temporarily set viewport size to a desktop resolution
+        let originalWidth = document.documentElement.clientWidth;
+        let originalHeight = document.documentElement.clientHeight;
+    
+        // Define the desktop size you want to capture
+        const desktopWidth = 1200; // You can adjust this value
+        const desktopHeight = 800; // You can adjust this value
+    
+        // Set the viewport size to desktop size
+        document.documentElement.style.width = `${desktopWidth}px`;
+        document.documentElement.style.height = `${desktopHeight}px`;
+    
+        html2canvas(document.querySelector(".container"), {
+            width: desktopWidth,
+            height: desktopHeight,
+            scrollX: 0,
+            scrollY: 0
+        }).then(canvas => {
+            // Reset viewport size
+            document.documentElement.style.width = `${originalWidth}px`;
+            document.documentElement.style.height = `${originalHeight}px`;
+    
+            let link = document.createElement('a');
+            link.download = 'receipt.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    }
+    </script>
+    
+
+{% endblock content %}

@@ -1,0 +1,134 @@
+
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+    Choose payment method
+{% endblock title %}
+
+{% block content %}
+<div class="container my-4">
+    <h1 class="text-center mb-4">Choose Payment Method</h1>
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="payment-method-card">
+                    <input class="payment-method-input" type="radio" name="payment_method" id="paypal" value="paypal"
+                        required>
+                    <label class="payment-method-label" for="paypal">
+                        <img src="{% static 'img/icons/paypal.png' %}" alt="PayPal" class="payment-method-icon">
+                        <span class="payment-method-name">PayPal</span>
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="payment-method-card">
+                    <input class="payment-method-input" type="radio" name="payment_method" id="aba_bank"
+                        value="aba_bank" required>
+                    <label class="payment-method-label" for="aba_bank">
+                        <img src="{% static 'img/icons/aba.png' %}" alt="ABA Bank" class="payment-method-icon">
+                        <span class="payment-method-name">ABA Bank</span>
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="payment-method-card">
+                    <input class="payment-method-input" type="radio" name="payment_method" id="acleda_bank"
+                        value="acleda_bank" required>
+                    <label class="payment-method-label" for="acleda_bank">
+                        <img src="{% static 'img/icons/acleda.png' %}" alt="ACLEDA Bank" class="payment-method-icon">
+                        <span class="payment-method-name">ACLEDA Bank</span>
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="payment-method-card">
+                    <input class="payment-method-input" type="radio" name="payment_method" id="wing_bank"
+                        value="wing_bank" required>
+                    <label class="payment-method-label" for="wing_bank">
+                        <img src="{% static 'img/icons/wing.png' %}" alt="Wing Bank" class="payment-method-icon">
+                        <span class="payment-method-name">Wing Bank</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mt-4">
+            <button type="submit" class="btn see-more-btn btn-lg">Continue</button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .payment-method-card {
+        position: relative;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background-color: #ffffff;
+    }
+
+    .payment-method-input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .payment-method-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .payment-method-icon {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        margin-bottom: 10px;
+    }
+
+    .payment-method-name {
+        font-weight: bold;
+    }
+
+    .payment-method-input:checked+.payment-method-label .payment-method-card {
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
+        background-color: #e6f2ff;
+        /* Light blue background for selected method */
+    }
+
+    .payment-method-input:focus+.payment-method-label .payment-method-card {
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
+    }
+
+    .payment-method-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const paymentMethods = document.querySelectorAll('.payment-method-input');
+        paymentMethods.forEach(method => {
+            method.addEventListener('change', function () {
+                paymentMethods.forEach(m => {
+                    m.closest('.payment-method-card').style.backgroundColor = '#ffffff';
+                });
+                if (this.checked) {
+                    this.closest('.payment-method-card').style.backgroundColor = '#ffedcb';
+                }
+            });
+        });
+    });
+</script>
+{% endblock content %}

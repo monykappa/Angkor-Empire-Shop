@@ -1,0 +1,102 @@
+{% load static %}
+<style>
+    .notification-indicator {
+        position: relative;
+        display: inline-block;
+    }
+
+    .notification-indicator::after {
+        content: '';
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        width: 10px;
+        height: 10px;
+        background-color: red;
+        border-radius: 50%;
+        display: none;
+    }
+
+    .notification-indicator.has-notifications::after {
+        display: block;
+    }
+</style>
+<nav class="navbar navbar-expand-lg fixed-top">
+    <!-- Logo and Brand -->
+    <a class="navbar-brand logo-name" href="#">
+        <img src="{% static 'img/logo/logo.png' %}" alt="Logo" height="50" class="nav-logo">
+    </a>
+
+    <!-- Toggle Button for Mobile -->
+    <button class="navbar-toggler btn-toggle" type="button" data-toggle="collapse" data-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fa-solid fa-bars text-white"></i>
+    </button>
+
+    <!-- Navbar Items -->
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+            {% for item in menu_items %}
+            <li class="nav-item menu">
+                <a class="nav-link" href="{{ item.url }}">
+                    {% if item.icon %}
+                    <span
+                        class="notification-indicator {% if item.name == 'Notifications' and unread_notification_count > 0 %}has-notifications{% endif %}">
+                        <i class="{{ item.icon }}"></i>
+                    </span>
+                    {% endif %}
+                    {{ item.name }}
+                </a>
+            </li>
+            {% endfor %}
+            {% if user.is_authenticated %}
+            <li class="nav-item menu">
+                <a class="nav-link user" href="{% url 'userprofile:profile' %}">{{ user.username }}</a>
+            </li>
+            <!-- base.html -->
+            {% if user.is_authenticated %}
+            {% if user.is_staff or user.is_superuser %}
+            <li class="nav-item menu">
+                <a href="{% url 'dashboard:dashboard' %}" class="nav-link">Dashboard</a>
+            </li>
+            {% elif user.deliverystaff %}
+            <li class="nav-item menu">
+                <a href="{% url 'delivery:dashboard' %}" class="nav-link">Dashboard</a>
+
+            </li>
+            {% endif %}
+            {% endif %}
+
+            <li class="nav-item menu">
+                <a class="nav-link" href="#" id="logoutLink">Logout</a>
+            </li>
+            {% else %}
+            <li class="nav-item menu">
+                <a class="nav-link nav-sign-in" href="{% url 'userprofile:sign_in' %}">Sign In</a>
+            </li>
+            <li class="nav-item menu">
+                <a class="nav-link nav-sign-up" href="{% url 'userprofile:signup' %}">Sign Up</a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>
+
+<script>
+    document.getElementById('logoutLink').addEventListener('click', function (event) {
+        event.preventDefault();
+        Swal.fire({
+            title: 'Are you sure you want to logout?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, logout!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = "{% url 'userprofile:logout' %}";
+            }
+        });
+    });
+</script>

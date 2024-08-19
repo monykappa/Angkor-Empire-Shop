@@ -1,0 +1,18 @@
+<h2>Category</h2>
+<table class="table">
+    <tr>
+        <th>Name</th>
+        <th>Action</th>
+    </tr>
+    {% for category in categories %}
+    <tr>
+        <td>{{ category.name }}</td>
+        <td>
+            <a href="{% url 'dashboard:edit_model' model='category' pk=category.pk %}" class="btn btn-primary"><i
+                    class="fa-solid fa-pen-to-square"></i></a>
+            <a href="{% url 'dashboard:model_delete' model_name='category' pk=category.pk %}"
+                class="delete-link btn btn-danger"><i class="fa-solid fa-trash"></i></a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>

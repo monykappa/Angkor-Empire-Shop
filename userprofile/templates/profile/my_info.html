@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Info{% endblock title %}
+
+{% block content %}
+<style>
+    .profile-picture-container {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        overflow: hidden;
+        margin: 0 auto 1rem;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .profile-picture {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+    }
+</style>
+
+<div class="container py-5">
+    <div class="row">
+        <!-- User Info Column (Left) -->
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center h-100">
+                    <h1 class="card-title mb-4">My Information</h1>
+
+                    {% if user.socialaccount_set.all %}
+                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
+                        class="rounded-circle img-thumbnail mb-3" width="150" height="150"
+                        alt="Social Account Profile Picture">
+                    <h2 class="h4 mb-3">{{ user.socialaccount_set.all.0.extra_data.name }}</h2>
+                    {% else %}
+                    <div class="profile-picture-container">
+                        {% if user.userprofile.pfp %}
+                        <img src="{{ user.userprofile.pfp.url }}" class="profile-picture"
+                            id="profilePicture">
+                        {% else %}
+                        <img src="https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg"
+                            class="profile-picture rounded-circle img-thumbnail mb-3"
+                            width="150" height="150">
+                        {% endif %}
+                    </div>
+                    <h2 class="h4 mb-3">{{ user.get_full_name }}</h2>
+                    {% endif %}
+
+                    <a href="#" class="btn btn-sm btn-outline-secondary mb-3 btn-primary text-white"
+                        data-bs-toggle="modal" data-bs-target="#editProfilePictureModal">
+                        <i class="fa-solid fa-camera text-white"></i> Change Profile Picture
+                    </a>
+
+                    <div class="text-start mb-4">
+                        <p><strong>Username:</strong> <span id="username">{{ user.username }}</span>
+                            <a href="#" class="btn btn-sm btn-outline-secondary ms-2 btn-primary" data-bs-toggle="modal"
+                                data-bs-target="#editUsernameModal"><i
+                                    class="fa-solid fa-pen-to-square text-white"></i></a>
+                        </p>
+                        <p><strong>Full Name:</strong> <span id="fullName">{{ user.get_full_name }}</span>
+                            <a href="#" class="btn btn-sm btn-outline-secondary ms-2 btn-primary" data-bs-toggle="modal"
+                                data-bs-target="#editFullNameModal"><i
+                                    class="fa-solid fa-pen-to-square text-white"></i></a>
+                        </p>
+                        <p><strong>Email:</strong> {{ user.email }}</p>
+                    </div>
+
+                    <div class="d-grid gap-2 col-lg-8 mx-auto">
+                        <a href="{% url 'password_reset' %}" class="btn btn-warning">Reset Password</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Address Column (Right) -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">My Address</h2>
+                    {% if user.address_set.exists %}
+                    {% with address=user.address_set.first %}
+                    <p><strong>Address 1:</strong> {{ address.address1 }}</p>
+                    <p><strong>Address 2:</strong> {{ address.address2|default:"N/A" }}</p>
+                    <p><strong>City:</strong> {{ address.city }}</p>
+                    <p><strong>Province:</strong> {{ address.province }}</p>
+                    <p><strong>Phone:</strong> {{ address.phone }}</p>
+                    <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editAddressModal"><i
+                            class="fa-solid fa-pen-to-square"></i></a>
+                    {% endwith %}
+                    {% else %}
+                    <p>No address information available.</p>
+                    <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editAddressModal">Add
+                        Address</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'modal/edit_username_modal.html' %}
+{% include 'modal/edit_full_name_modal.html' %}
+{% include 'modal/edit_address_modal.html' %}
+{% include 'modal/edit_profile_picture_modal.html' %}
+
+<script>
+    $(document).ready(function () {
+        // Load username edit form
+        $('#editUsernameModal').on('show.bs.modal', function (e) {
+            $(this).find('.modal-body').load("{% url 'userprofile:edit_username' %}");
+        });
+
+        // Load full name edit form
+        $('#editFullNameModal').on('show.bs.modal', function (e) {
+            $(this).find('.modal-body').load("{% url 'userprofile:edit_full_name' %}");
+        });
+        $('#editAddressModal').on('show.bs.modal', function (e) {
+            $(this).find('.modal-body').load("{% url 'userprofile:edit_address' %}");
+        });
+
+        // Handle address form submission
+        $(document).on('submit', '#editAddressForm', function (e) {
+            e.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'userprofile:edit_address' %}",
+                data: $(this).serialize(),
+                success: function (response) {
+                    if (response.error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.error,
+                        });
+                    } else {
+                        $('#editAddressModal').modal('hide');
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: 'Address has been updated successfully!',
+                        }).then(() => {
+                            location.reload();
+                        });
+                    }
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'An error occurred. Please try again.',
+                    });
+                }
+            });
+        });
+    });
+
+
+    $('#editProfilePictureModal').on('show.bs.modal', function (e) {
+        $(this).find('.modal-body').load("{% url 'userprofile:edit_profile_picture' %}");
+    });
+
+    // Handle profile picture form submission
+    $(document).on('submit', '#editProfilePictureForm', function (e) {
+        e.preventDefault();
+        var formData = new FormData(this);
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'userprofile:edit_profile_picture' %}",
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                if (response.error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.error,
+                    });
+                } else {
+                    $('#editProfilePictureModal').modal('hide');
+                    // Trigger a custom event with the new profile picture URL
+                    $(document).trigger('profilePictureUpdated', [response.pfp_url]);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'Profile picture has been updated successfully!',
+                    });
+                }
+            },
+            error: function (xhr, status, error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An error occurred. Please try again.',
+                });
+            }
+        });
+    });
+
+    // Listen for the custom event and update all profile picture instances
+    $(document).on('profilePictureUpdated', function (event, newPfpUrl) {
+        $('.profile-picture-container img').attr('src', newPfpUrl);
+    });
+
+
+    // Handle username form submission
+    $(document).ready(function () {
+        // Function to check username availability
+        function checkUsernameAvailability(username) {
+            $.ajax({
+                url: "{% url 'userprofile:check_username_availability' %}",
+                data: {
+                    'username': username
+                },
+                success: function (data) {
+                    if (data.is_taken) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Username Error',
+                            text: data.message
+                        });
+                    } else {
+                        // Proceed with form submission if username is available
+                        submitUsernameForm();
+                    }
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'An error occurred while checking username availability. Please try again.'
+                    });
+                }
+            });
+        }
+
+        // Handle form submission
+        $(document).on('submit', '#editUsernameForm', function (e) {
+            e.preventDefault();
+            var username = $('#id_username').val();
+
+            // Check for spaces in username
+            if (username.includes(' ')) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Username',
+                    text: 'Username cannot contain spaces. Please remove any spaces.'
+                });
+                return;
+            }
+
+            // Check username availability before submitting form
+            checkUsernameAvailability(username);
+        });
+
+        // Function to submit username form
+        function submitUsernameForm() {
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'userprofile:edit_username' %}",
+                data: $('#editUsernameForm').serialize(),
+                success: function (response) {
+                    if (response.error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.error
+                        });
+                    } else {
+                        $('#username').text(response.username);
+                        $('#editUsernameModal').modal('hide');
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: 'Username has been updated successfully!'
+                        });
+                    }
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'An error occurred while updating username. Please try again.'
+                    });
+                }
+            });
+        }
+    });
+
+    // Handle full name form submission
+    $(document).on('submit', '#editFullNameForm', function (e) {
+        e.preventDefault();
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'userprofile:edit_full_name' %}",
+            data: $(this).serialize(),
+            success: function (response) {
+                $('#fullName').text(response.full_name);
+                $('#editFullNameModal').modal('hide');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: 'Full name has been updated successfully!',
+                });
+            },
+            error: function (xhr, status, error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An error occurred. Please try again.',
+                });
+            }
+        });
+    });
+
+</script>
+
+{% endblock content %}

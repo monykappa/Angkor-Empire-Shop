@@ -1,0 +1,40 @@
+{% load static %}
+
+{% block content %}
+    <style>
+        @media (max-width: 575.98px) {
+            .modal.fade .modal-dialog {
+                transform: translate(0, 100%);
+            }
+            .modal.show .modal-dialog {
+                transform: none;
+            }
+        }
+            .warranty-badge {
+                position: absolute;
+                top: 15px;
+                right: -0px;
+                background-color: #4CAF50 !important; /* Green background */
+                color: white;
+                padding: 5px 10px;
+                font-size: 0.8rem;
+                font-weight: bold;
+                z-index: 2;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                border-radius: 3px;
+                transform: rotate(15deg);
+            
+        }
+    </style>
+    
+    <div class="m-3">
+        <button class="btn btn-secondary w-20" data-bs-toggle="modal" data-bs-target="#filterModal ">
+            <i class="fas fa-filter mr-3"></i>Filter
+        </button>
+    </div>
+
+
+{% endblock content %}
+{% block js %}
+    <script src="{% static 'js/filter/filterProducts.js' %}"></script>
+{% endblock js %}

@@ -1,0 +1,247 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+{% block title %}
+Dashboard | Order
+{% endblock title %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- Include html2pdf.js from a different CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+
+<style>
+    .address-cell {
+        max-width: 150px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .address-content {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .clickable-row:hover {
+        background-color: #e9ecef;
+        cursor: pointer;
+    }
+    .status-badge {
+        border-radius: 5px;
+        padding: 5px 10px;
+        font-size: 0.8rem;
+    }
+    .custom-badge {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background-color: red;
+        color: white;
+        border-radius: 50px;
+        padding: 5px 10px;
+    }
+    .btn-filter {
+        position: relative;
+    }
+    .clickable-cell:hover {
+        background-color: #e9ecef;
+        cursor: pointer;
+    }
+    #filter-container {
+        position: sticky;
+        top: 20px; /* Adjust this value to set the distance from the top of the viewport */
+        max-height: calc(100vh - 40px); /* Adjust this value to ensure it doesn't overflow the viewport */
+        overflow-y: auto;
+    }
+
+    @media (max-width: 991px) {
+        #filter-container {
+            position: static;
+            max-height: none;
+            overflow-y: visible;
+        }
+    }
+    
+</style>
+
+<div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-lg-3 mb-4">
+                <div class="card" id="filter-container">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4">Filter Orders</h5>
+                        <form method="get">
+                            <div class="mb-3">
+                                <input type="text" name="search" class="form-control" placeholder="Search orders..." value="{{ search }}">
+                            </div>
+                            <div class="mb-3">
+                                <select name="status" class="form-select">
+                                    <option value="">All Statuses</option>
+                                    {% for status_value, status_label in order_status_choices %}
+                                        <option value="{{ status_value }}" {% if status_value == status %}selected{% endif %}>
+                                            {{ status_label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                
+                            </div>
+                            <div class="mb-3">
+                                <select name="sort_by" class="form-select">
+                                    <option value="">Default Sorting</option>
+                                    <option value="-ordered_date" {% if sort_by == '-ordered_date' %}selected{% endif %}>Latest First</option>
+                                    <option value="ordered_date" {% if sort_by == 'ordered_date' %}selected{% endif %}>Oldest First</option>
+                                    <option value="total_price" {% if sort_by == 'total_price' %}selected{% endif %}>Price Low to High</option>
+                                    <option value="-total_price" {% if sort_by == '-total_price' %}selected{% endif %}>Price High to Low</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Date Range</label>
+                                <div class="input-group">
+                                    <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+                                    <span class="input-group-text">to</span>
+                                    <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                                <a href="{% url 'dashboard:order' %}" class="btn btn-outline-secondary">Clear Filters</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-9">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="card-title mb-4">Order History</h2>
+                        <div class="mb-4">
+                            <a href="{% url 'dashboard:order' %}?status=Pending" class="btn {% if status == 'Pending' %}btn-warning{% else %}btn-outline-warning{% endif %} me-2">
+                                Pending {% if pending_orders_count > 0 %}<span class="badge custom-badge">{{ pending_orders_count }}</span>{% endif %}
+                            </a>
+                            
+                            <a href="{% url 'dashboard:order' %}?status=Completed" class="btn {% if status == 'Completed' %}btn-success{% else %}btn-outline-success{% endif %} me-2">
+                                Completed
+                            </a>
+                            
+                            <a href="{% url 'dashboard:order' %}?status=Cancelled" class="btn {% if status == 'Cancelled' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                                Cancelled
+                            </a>
+                            
+                        </div>
+
+                        <button class="btn btn-primary mb-3" onclick="printTable()">Print</button>
+                        <button class="btn btn-success mb-3" onclick="exportTableToExcel()">Export to Excel</button>
+                        <button class="btn btn-danger mb-3" onclick="exportTableToPDF()">Export to PDF</button>
+
+                        <div class="table-responsive">
+
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Ordered Date</th>
+                <th>Total Price</th>
+                <th>Customer</th>
+                <th>Address</th>
+                <th>Status</th>
+                {% if pending_orders_count > 0 %}
+                <th class="action-column">Action</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% if order_histories %}
+            {% for order_history in order_histories %}
+            <tr>
+                <td class="clickable-cell" data-href="{% url 'dashboard:order_detail' order_history.id %}">{{ order_history.id }}</td>
+                <td class="clickable-cell" data-href="{% url 'dashboard:order_detail' order_history.id %}">{{ order_history.ordered_date|date:"M d, Y" }}</td>
+                <td class="clickable-cell" data-href="{% url 'dashboard:order_detail' order_history.id %}">${{ order_history.total_price|floatformat:2 }}</td>
+                <td class="clickable-cell" data-href="{% url 'dashboard:order_detail' order_history.id %}">{{ order_history.user }}</td>
+                <td class="clickable-cell" data-href="{% url 'dashboard:order_detail' order_history.id %}">
+                    {% if order_history.order_address %}
+                        <div style="white-space: normal; max-width: 200px;">
+                            <div>{{ order_history.order_address.address1 }}</div>
+                            {% if order_history.order_address.address2 %}
+                                <div>{{ order_history.order_address.address2 }}</div>
+                            {% endif %}
+                            <div>{{ order_history.order_address.city }}, {{ order_history.order_address.province }}</div>
+                        </div>
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td class="clickable-cell" data-href="{% url 'dashboard:order_detail' order_history.id %}">
+                    <span class="status-badge bg-{% if order_history.status == 'Pending' %}warning{% elif order_history.status == 'Completed' %}success{% else %}danger{% endif %} text-white">
+                        {{ order_history.get_status_display }}
+                    </span>
+                </td>
+                {% if order_history.status == "Pending" %}
+                <td class="action-column">
+                        <form method="post" action="{% url 'dashboard:order_status_update' order_history.pk %}" class="d-inline complete-order-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="Completed">
+                            <button type="submit" class="btn btn-success btn-sm complete-order-btn" title="Mark as Completed"><i class="fas fa-check"></i></button>
+                        </form>
+                        <form method="post" action="{% url 'dashboard:order_status_update' order_history.pk %}" class="d-inline cancel-order-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="Cancelled">
+                            <button type="submit" class="btn btn-danger btn-sm cancel-order-btn" title="Cancel Order"><i class="fas fa-times"></i></button>
+                        </form>
+                    </td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="8" class="text-center">No orders found.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+                        {% if is_paginated %}
+                            <nav aria-label="Page navigation" class="mt-4">
+                                <ul class="pagination justify-content-center">
+                                    {% if page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query_params %}&{{ query_params }}{% endif %}" aria-label="Previous">
+                                                <span aria-hidden="true">&laquo;</span>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+
+                                    {% for num in page_obj.paginator.page_range %}
+                                        {% if page_obj.number == num %}
+                                            <li class="page-item active"><a class="page-link" href="?page={{ num }}{% if query_params %}&{{ query_params }}{% endif %}">{{ num }}</a></li>
+                                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                            <li class="page-item"><a class="page-link" href="?page={{ num }}{% if query_params %}&{{ query_params }}{% endif %}">{{ num }}</a></li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query_params %}&{{ query_params }}{% endif %}" aria-label="Next">
+                                                <span aria-hidden="true">&raquo;</span>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+{% endblock content %}
+
+{% block js %}
+<script src="{% static 'js/dashboard/Order.js' %}"></script>
+{% endblock js %}

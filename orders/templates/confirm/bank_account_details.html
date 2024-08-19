@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+    {% if payment_method == 'aba_bank' %}
+        ABA Bank Details
+    {% elif payment_method == 'acleda_bank' %}
+        Acleda Bank Details
+    {% elif payment_method == 'wing_bank' %}
+        Wing Bank Details
+    {% endif %}
+{% endblock title %}
+{% block content %}
+<style>
+    .form-control-file {
+        border: 1px solid #ced4da;
+        border-radius: .25rem;
+        padding: .5rem;
+        background-color: #f8f9fa;
+        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    }
+
+    .form-control-file:focus {
+        border-color: #80bdff;
+        outline: 0;
+        box-shadow: 0 0 0 .2rem rgba(38, 143, 255, .25);
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+        font-size: 1.25rem;
+        padding: .75rem 1.5rem;
+        border-radius: .3rem;
+        transition: background-color .2s, border-color .2s;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #004085;
+    }
+
+    .btn-primary:focus,
+    .btn-primary.focus {
+        box-shadow: 0 0 0 .2rem rgba(38, 143, 255, .5);
+    }
+
+    .form-label {
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+
+    .preview-container {
+        margin-top: 1rem;
+        text-align: center;
+    }
+
+    .preview-img {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #ced4da;
+        border-radius: .25rem;
+    }
+
+    .file-upload-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .file-upload-container .form-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .file-upload-container .form-control-file {
+        margin-bottom: 10px;
+        /* Space between file input and button */
+    }
+
+    .preview-container {
+        text-align: center;
+    }
+
+    .preview-img {
+        max-width: 100%;
+        /* Ensure image does not overflow its container */
+        height: auto;
+        /* Maintain aspect ratio */
+        margin: 0 auto;
+    }
+</style>
+
+<div class="container my-4">
+    <h1 class="text-center mb-4">Bank Account Details</h1>
+
+    <!-- Total order amount -->
+    <h5 class="text-center mb-2">Total Order Amount in USD: <span class="text-danger">${{ total_price }}</span></h5>
+    <h5 class="text-center mb-4">Total Order Amount in KHR: <span class="text-danger">{{ total_price_riel }}៛</span>
+    </h5>
+
+
+    <!-- Bank account details -->
+    {% if payment_method == 'aba_bank' %}
+
+    <h5 class="text-center font-weight-bold m-3">Account Holder-Name: OUDDOMMONY KIM</h5>
+
+    <div class="d-flex justify-content-center flex-wrap mb-4">
+
+        <!-- ABA Bank details -->
+        <div class="text-center me-4">
+            <h5>004 366 325 (USD)</h5>
+            <h5><a href="https://pay.ababank.com/His1GBrn3ii4wwnf9" target="_blank">Payment Link</a> (for mobile)</h5>
+            <img src="{% static 'img/banks/ABA_USD.jpg' %}" alt="ABA Bank USD" class="img-fluid mr-3"
+                style="max-width: 300px; height: auto;">
+        </div>
+
+        <div class="text-center">
+            <h5>501 109 382 (KHR)</h5>
+            <h5><a href="https://pay.ababank.com/TkTgZMfxiXwwkNSn8" target="_blank">Payment Link</a> (for mobile)</h5>
+            <img src="{% static 'img/banks/ABA_KHR.jpg' %}" alt="ABA Bank KHR" class="img-fluid ml-3"
+                style="max-width: 300px; height: auto;">
+        </div>
+    </div>
+    {% elif payment_method == 'acleda_bank' %}
+    <h5 class="text-center font-weight-bold m-3">Account Holder-Name: Ouddommony Kim</h5>
+    <div class="d-flex justify-content-center flex-wrap mb-4">
+        <!-- Acleda Bank details -->
+        <div class="text-center me-4 mr-3">
+            <h5>088 802 6678 (USD)</h5>
+            <h5><a href="https://acledabank.com.kh/acleda?payment_data=qWY5B2SAUfIhLblxzOtfuw47udzmGygaljo5Jttm2qSdNCqBTzgTY3b1oa6vDNwC9cZPgUjmb0xjeyU0hh9oMKWU0mkyPNBcRYGTLKDpob/iLFPp8OPuumIYwKcmtkdMwrmkCR8l8DRr//HlpCpX7H1xRur216FsWh5kYYmtacsiN47Wl7+hUFfUGNLSN5XrnEsKW4R/BFDGXW0+uKCyer2vREWl4B3o1dDqorJBoIk=&key=khqr"
+                    target="_blank">Payment Link</a> (for mobile)</h5> <!-- Update this payment link -->
+            <img src="{% static 'img/banks/Acleda_KHR.jpg' %}" alt="ACLEDA Bank KHR" class="img-fluid"
+                style="max-width: 300px; height: auto;">
+        </div>
+
+        <div class="text-center ml-3">
+            <h5>088 802 6678 (KHR)</h5>
+            <h5><a href="https://acledabank.com.kh/acleda?payment_data=qWY5B2SAUfIhLblxzOtfuw47udzmGygaljo5Jttm2qSdNCqBTzgTY3b1oa6vDNwC9cZPgUjmb0xjeyU0hh9oMKWU0mkyPNBcRYGTLKDpob/iLFPp8OPuumIYwKcmtkdM5NW0Kzlmn4jLzLC10KfMraTDeZZkKuCaT99TFGk+J9+H9nkrM+GuAypxdY9JRzygWyoqQycuV+c2ZWR8uaoH7AqcJNiP3tvwzDZ85Wt8hnk=&key=khqr"
+                    target="_blank">Payment Link</a> (for mobile)</h5> <!-- Update this payment link -->
+            <img src="{% static 'img/banks/Acleda_USD.jpg' %}" alt="ACLEDA Bank USD" class="img-fluid"
+                style="max-width: 300px; height: auto;">
+        </div>
+    </div>
+    {% elif payment_method == 'wing_bank' %}
+    <h5 class="text-center font-weight-bold m-3">Account Holder-Name: OUDDOMMONY KIM</h5>
+    <div class="d-flex justify-content-center flex-wrap mb-4">
+        <!-- Wing Bank details -->
+        <div class="text-center">
+            <h5>501 109 382 (USD)</h5>
+            <h5><a href="https://wingmoney.app.link/34YrwEIl0Lb" target="_blank">Payment Link</a> (for mobile)</h5>
+            <!-- Update this payment link -->
+            <img src="{% static 'img/banks/Wing_USD.jpg' %}" alt="Wing Bank USD" class="img-fluid"
+                style="max-width: 300px; height: auto;">
+        </div>
+    </div>
+    {% endif %}
+    <div class="text-center">
+        <p class="text-danger">1. * Scan one of these QR codes or type the account number.</p>
+        <p class="text-danger">2. * Enter the total amount in USD or KHR.</p>
+        <p class="text-danger">3. * After making the payment, take a screenshot of the receipt, upload it to the current
+            page, and click "Submit Receipt."</p>
+        <p class="text-danger">4. * Your receipt will be reviewed afterward.</p>
+    </div>
+
+
+    <!-- Receipt upload form -->
+    <h2 class="text-center mb-4">Upload Receipt</h2>
+    <form method="post" enctype="multipart/form-data" class="text-center">
+        {% csrf_token %}
+        <input type="hidden" name="order_id" value="{{ order_id }}">
+
+        <!-- File Input and Button Container -->
+        <div class="file-upload-container text-center mb-4">
+            <div class="form-group d-flex flex-column align-items-center">
+                <label class="form-label mb-2" for="receipt">Choose Receipt Image</label>
+                <input type="file" name="receipt" id="receipt" accept="image/*" required class="form-control-file mb-3">
+                <button type="submit" class="btn see-more-btn">Submit Receipt</button>
+            </div>
+            <!-- Image Preview -->
+            <div class="preview-container mt-4">
+                <img id="image-preview" class="preview-img" style="display: none; width:50%" alt="Receipt Preview">
+            </div>
+        </div>
+    </form>
+</div>
+
+
+<script>
+    document.getElementById('receipt').addEventListener('change', function (event) {
+        const file = event.target.files[0];
+        const preview = document.getElementById('image-preview');
+        const container = document.getElementById('preview-container');
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                container.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+            container.style.display = 'none';
+        }
+    });
+</script>
+{% endblock content %}

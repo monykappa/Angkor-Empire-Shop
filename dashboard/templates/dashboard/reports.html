@@ -1,0 +1,312 @@
+{% extends 'dashboard_base.html' %}
+{% block title %}
+Reports
+{% endblock title %}
+{% block content %}
+<style>
+    .card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .card-body {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+
+    .btn-primary {
+        margin-top: auto;
+    }
+</style>
+</head>
+
+<body>
+    <div class="">
+        <h1 class="mb-4">Reports</h1>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            <!-- Order Report Card -->
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-gradient-success text-white">
+                        Order Report
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="{% url 'dashboard:order_report' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="orderReportPeriod" class="form-label">Select Report Period</label>
+                                <select class="form-select" id="orderReportPeriod" name="reportPeriod" required>
+                                    <option value="" disabled selected>Select a period</option>
+                                    <option value="today">Today</option>
+                                    <option value="this_week">This Week</option>
+                                    <option value="this_month">This Month</option>
+                                    <option value="this_semester">This Semester</option>
+                                    <option value="this_year">This Year</option>
+                                    <option value="custom">Custom</option>
+                                </select>
+                            </div>
+                            <div class="mb-3 d-none" id="customDateFields">
+                                <label for="customStartDate" class="form-label">Custom Start Date</label>
+                                <input type="date" class="form-control" id="customStartDate" name="custom_start_date">
+                                <label for="customEndDate" class="form-label">Custom End Date</label>
+                                <input type="date" class="form-control" id="customEndDate" name="custom_end_date">
+                            </div>
+                            <div class="mb-3">
+                                <label for="orderExportFormat" class="form-label">Select Export Format</label>
+                                <select class="form-select" id="orderExportFormat" name="exportFormat" required>
+                                    <option value="" disabled selected>Select format</option>
+                                    <option value="pdf">PDF</option>
+                                    <option value="excel">Excel</option>
+                                    <option value="print">Print</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Generate Report</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Product Report Card -->
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-gradient-secondary text-white">
+                        Product Report
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="{% url 'dashboard:generate_product_report' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="productExportFormat" class="form-label">Select Export Format</label>
+                                <select class="form-select" id="productExportFormat" name="exportFormat" required>
+                                    <option value="" disabled selected>Select format</option>
+                                    <option value="pdf">PDF</option>
+                                    <option value="excel">Excel</option>
+                                    <option value="print">Print</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Generate Report</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stock Report Card -->
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-gradient-primary text-white">
+                        Stock Report
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="{% url 'dashboard:generate_stock_report' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="stockExportFormat" class="form-label">Select Export Format</label>
+                                <select class="form-select" id="stockExportFormat" name="exportFormat" required>
+                                    <option value="" disabled selected>Select format</option>
+                                    <option value="pdf">PDF</option>
+                                    <option value="excel">Excel</option>
+                                    <option value="print">Print</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Generate Report</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delivery History Report Card -->
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-gradient-warning text-white">
+                        Delivery History Report
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="{% url 'dashboard:export_delivery_history' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="deliveryReportPeriod" class="form-label">Select Report Period</label>
+                                <select class="form-select" id="deliveryReportPeriod" name="reportPeriod" required>
+                                    <option value="" disabled selected>Select a period</option>
+                                    <option value="today">Today</option>
+                                    <option value="this_week">This Week</option>
+                                    <option value="this_month">This Month</option>
+                                    <option value="this_semester">This Semester</option>
+                                    <option value="this_year">This Year</option>
+                                    <option value="custom">Custom</option>
+                                </select>
+                            </div>
+                            <div id="deliveryCustomDates" class="d-none">
+                                <div class="mb-3">
+                                    <label for="deliveryCustomStartDate" class="form-label">Custom Start Date</label>
+                                    <input type="date" id="deliveryCustomStartDate" name="customStartDate"
+                                        class="form-control">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="deliveryCustomEndDate" class="form-label">Custom End Date</label>
+                                    <input type="date" id="deliveryCustomEndDate" name="customEndDate"
+                                        class="form-control">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="deliveryExportFormat" class="form-label">Select Export Format</label>
+                                <select class="form-select" id="deliveryExportFormat" name="exportFormat" required>
+                                    <option value="" disabled selected>Select format</option>
+                                    <option value="pdf">PDF</option>
+                                    <option value="excel">Excel</option>
+                                    <option value="print">Print</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Generate Report</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Revenue Report Card -->
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-gradient-success text-white">
+                        Revenue Report
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="{% url 'dashboard:export_revenue' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="revenueReportPeriod" class="form-label">Select Report Period</label>
+                                <select class="form-select" id="revenueReportPeriod" name="reportPeriod" required>
+                                    <option value="" disabled selected>Select an option</option>
+                                    <option value="today">Today</option>
+                                    <option value="this_week">This Week</option>
+                                    <option value="this_month">This Month</option>
+                                    <option value="this_semester">This Semester</option>
+                                    <option value="this_year">This Year</option>
+                                    <option value="custom">Custom</option>
+                                </select>
+                            </div>
+                            <div id="custom-date-fields" class="d-none">
+                                <div class="mb-3">
+                                    <label for="startDate" class="form-label">Start Date</label>
+                                    <input type="date" class="form-control" id="startDate" name="startDate">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="endDate" class="form-label">End Date</label>
+                                    <input type="date" class="form-control" id="endDate" name="endDate">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="revenueExportFormat" class="form-label">Select Export Format</label>
+                                <select class="form-select" id="revenueExportFormat" name="exportFormat" required>
+                                    <option value="" disabled selected>Select format</option>
+                                    <option value="pdf">PDF</option>
+                                    <option value="excel">Excel</option>
+                                    <option value="print">Print</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Generate Report</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Report Card -->
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-gradient-secondary text-white">
+                        User Report
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="{% url 'dashboard:user_report' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="userReportPeriod" class="form-label">Select Report Period</label>
+                                <select class="form-select" id="userReportPeriod" name="report_period" required>
+                                    <option value="" disabled selected>Select an option</option>
+                                    <option value="today">Today</option>
+                                    <option value="7_days">Last 7 Days</option>
+                                    <option value="this_month">This Month</option>
+                                    <option value="this_semester">This Semester</option>
+                                    <option value="this_year">This Year</option>
+                                    <option value="custom">Custom</option>
+                                </select>
+                            </div>
+                            <div id="userCustomDates" class="d-none">
+                                <div class="mb-3">
+                                    <label for="userCustomStartDate" class="form-label">Custom Start Date</label>
+                                    <input type="date" id="userCustomStartDate" name="custom_start_date"
+                                        class="form-control">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="userCustomEndDate" class="form-label">Custom End Date</label>
+                                    <input type="date" id="userCustomEndDate" name="custom_end_date"
+                                        class="form-control">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="userExportFormat" class="form-label">Export Format</label>
+                                <select class="form-select" id="userExportFormat" name="export_format" required>
+                                    <option value="" disabled selected>Select an option</option>
+                                    <option value="pdf">PDF</option>
+                                    <option value="excel">Excel</option>
+                                    <option value="print">Print</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Generate Report</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // Show/hide custom date fields for Revenue Report
+        document.getElementById('revenueReportPeriod').addEventListener('change', function () {
+            const customDateFields = document.getElementById('custom-date-fields');
+            customDateFields.classList.toggle('d-none', this.value !== 'custom');
+        });
+
+        // Show/hide custom date fields for User Report
+        document.getElementById('userReportPeriod').addEventListener('change', function () {
+            const userCustomDates = document.getElementById('userCustomDates');
+            userCustomDates.classList.toggle('d-none', this.value !== 'custom');
+        });
+
+        document.getElementById('userReportPeriod').addEventListener('change', function () {
+            const customFields = document.getElementById('userCustomDates');
+            if (this.value === 'custom') {
+                customFields.classList.remove('d-none');
+            } else {
+                customFields.classList.add('d-none');
+            }
+        });
+
+        document.getElementById('deliveryReportPeriod').addEventListener('change', function () {
+            const customFields = document.getElementById('deliveryCustomDates');
+            if (this.value === 'custom') {
+                customFields.classList.remove('d-none');
+            } else {
+                customFields.classList.add('d-none');
+            }
+        });
+
+        document.getElementById('orderReportPeriod').addEventListener('change', function () {
+            var customDateFields = document.getElementById('customDateFields');
+            if (this.value === 'custom') {
+                customDateFields.classList.remove('d-none');
+            } else {
+                customDateFields.classList.add('d-none');
+            }
+        });
+    </script>
+
+    {% endblock content %}

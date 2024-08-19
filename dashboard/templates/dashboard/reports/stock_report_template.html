@@ -1,0 +1,59 @@
+<!-- templates/dashboard/reports/stock_report_template.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Report</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Stock Report</h1>
+    {% if brand_stock_data %}
+        {% for brand, stocks in brand_stock_data.items %}
+        <h2>Brand: {{ brand }}</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Product ID</th>
+                    <th>Product Name</th>
+                    <th>Model</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Updated At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stock in stocks %}
+                <tr>
+                    <td>{{ stock.product.id }}</td>
+                    <td>{{ stock.product.name }}</td>
+                    <td>{{ stock.product.model }}</td>
+                    <td>${{ stock.product.price }}</td>
+                    <td>{{ stock.quantity }}</td>
+                    <td>{{ stock.updated_at }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endfor %}
+    {% else %}
+        <p>No stock data available.</p>
+    {% endif %}
+</body>
+</html>

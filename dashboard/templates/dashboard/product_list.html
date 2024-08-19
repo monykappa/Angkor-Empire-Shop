@@ -1,0 +1,202 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% block title %}
+Dashboard | Product
+{% endblock title %}
+
+{% block content %}
+<style>
+    i {
+        font-size: 14px !important;
+    }
+</style>
+<div class="">
+    <h2>Product List</h2>
+    <a href="{% url 'dashboard:product_add' %}" class="btn btn-primary"><i class="fa fa-add"></i> Add Product</a>
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+<div class="">
+    <form method="get" class="mb-4">
+        <div class="row">
+            <div class="col-md-3 mb-2">
+                <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ search }}">
+            </div>
+            <div class="col-md-2 mb-2">
+                <select name="sort_by" class="form-select">
+                    <option value="-id" {% if sort_by == '-id' %}selected{% endif %}>Newest</option>
+                    <option value="id" {% if sort_by == 'id' %}selected{% endif %}>Oldest</option>
+                    <option value="price" {% if sort_by == 'price' %}selected{% endif %}>Price Low to High</option>
+                    <option value="-price" {% if sort_by == '-price' %}selected{% endif %}>Price High to Low</option>
+                    <option value="year" {% if sort_b == 'year' %}selected{% endif %}>Year</option>
+                    <option value="color__name" {% if sort_by == 'color__name' %}selected{% endif %}>Color</option>
+                    <option value="brand__name" {% if sort_b == 'brand__name' %}selected{% endif %}>Brand</option>
+                </select>
+            </div>
+            <div class="col-md-2 mb-2">
+                <select name="color" class="form-select">
+                    <option value="">All Colors</option>
+                    {% for color in colors %}
+                    <option value="{{ color.name }}" {% if color.name == color %}selected{% endif %}>{{ color.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 mb-2">
+                <select name="brand" class="form-select">
+                    <option value="">All Brands</option>
+                    {% for brand in brands %}
+                    <option value="{{ brand.name }}" {% if brand.name == brand %}selected{% endif %}>{{ brand.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 mb-2">
+                <button type="submit" class="btn btn-primary me-2">Apply Filters</button>
+                <a href="#" class="btn btn-secondary" id="clearFiltersBtn" data-clear-url="{{ clear_filter_url }}">Clear Filters</a>
+                <button type="button" class="btn btn-success me-2" id="pdfExport">Export to PDF</button>
+            </div>
+        </div>
+    </form>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Product Name</th>
+                <th>Model</th>
+                <th>Image</th>
+                <th>Brand</th>
+                <th>Color</th>
+                <th>Price</th>
+                <th>Year</th>
+                <th>Warranty</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr>
+                <td>{{ product.id }}</td>
+                <td>{{ product.name }}</td>
+                <td>{{ product.model }}</td>
+                <td>
+                    {% if product.images.exists %}
+                    <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" width="120">
+                    {% else %}
+                    <p>No image</p>
+                    {% endif %}
+                </td>
+                <td>{{ product.brand.name }}</td>
+                <td>{{ product.color.name }}</td>
+                <td>${{ product.price }}</td>
+                <td>{{ product.year }}</td>
+                <td>
+                    {% if product.warranty_years %}
+                    {{ product.warranty_years }} year{% if product.warranty_years > 1 %}s{% endif %}
+                    {% endif %}
+                    {% if product.warranty_months %}
+                    {% if product.warranty_years %} and {% endif %}
+                    {{ product.warranty_months }} month{% if product.warranty_months > 1 %}s{% endif %}
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'dashboard:product_edit' product.id %}" class="btn btn-primary btn-sm"><i
+                            class="fa fa-pen"></i></a>
+                    <button type="button" class="btn btn-danger btn-sm"
+                        onclick="confirmDelete('{% url 'dashboard:product_delete' product.id %}')"><i
+                            class="fa fa-trash"></i></button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if is_paginated %}
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{% if query_params %}&{{ query_params }}{% endif %}" aria-label="First">
+                <span aria-hidden="true">&laquo;&laquo;</span>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link"
+                href="?page={{ page_obj.previous_page_number }}{% if query_params %}&{{ query_params }}{% endif %}"
+                aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %} <li class="page-item"><a
+                class="page-link" href="?page={{ num }}{% if query_params %}&{{ query_params }}{% endif %}">{{ num }}</a></li>
+            {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ page_obj.next_page_number }}{% if query_params %}&{{ query_params }}{% endif %}"
+                    aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ page_obj.paginator.num_pages }}{% if query_params %}&{{ query_params }}{% endif %}"
+                    aria-label="Last">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+            {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+
+<div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportModalLabel">Export to PDF</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Choose export option:</p>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="exportOption" id="exportCurrent" value="current"
+                        checked>
+                    <label class="form-check-label" for="exportCurrent">
+                        Export current page
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="exportOption" id="exportAll" value="all">
+                    <label class="form-check-label" for="exportAll">
+                        Export all data
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="confirmExport">Export</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block js %}
+    <script src="{% static 'js/dashboard/productList.js' %}"></script>
+{% endblock js %}

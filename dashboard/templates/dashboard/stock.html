@@ -1,0 +1,249 @@
+{% extends 'dashboard_base.html' %}
+{% block title %}
+Stock
+{% endblock title %}
+
+{% block content %}
+<style>
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+    }
+</style>
+<div class="">
+    <h1>Stock List</h1>
+    <form action="" method="get" class="mb-3" id="filterForm">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Search product" name="search_query" value="{{ search_query|default:'' }}">
+                    <button class="btn btn-primary" type="submit">Search</button>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="stock_filter" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Stock</option>
+                    <option value="in_stock" {% if stock_filter == 'in_stock' %}selected{% endif %}>In Stock</option>
+                    <option value="out_of_stock" {% if stock_filter == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="sort_by" class="form-select" onchange="this.form.submit()">
+                    <option value="name_asc" {% if sort_by == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
+                    <option value="name_desc" {% if sort_by == 'name_desc' %}selected{% endif %}>Name (Z-A)</option>
+                    <option value="updated_desc" {% if sort_by == 'updated_desc' %}selected{% endif %}>Last Updated (Newest)</option>
+                    <option value="updated_asc" {% if sort_by == 'updated_asc' %}selected{% endif %}>Last Updated (Oldest)</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="button" class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
+
+            </div>
+        </div>
+    </form>
+    <div class="mb-3">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStockModal">
+            Add Stock
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="printTable()">
+            Print Table
+        </button>
+        <button type="button" class="btn btn-info" onclick="exportToPDF()">
+            Export to PDF
+        </button>
+    </div>
+    <div id="tableContainer">
+        <table class="table table-striped" id="stockTable">
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Product</th>
+                    <th>Model</th>
+                    <th>Year</th>
+                    <th>Quantity</th>
+                    <th>Price per Unit</th>
+                    <th>Total Price</th>
+                    <th>Last Updated on</th>
+                    <th>Availability</th>
+                    <th class="no-print">Actions</th>
+
+                </tr>
+            </thead>
+            <tbody>
+                {% for stock in stocks %}
+                <tr>
+                    <td>
+                        {% if stock.product.images.exists %}
+                        <img src="{{ stock.product.images.first.image.url }}" alt="{{ stock.product.name }}"
+                            style="max-width: 100px; max-height: 100px;">
+                        {% else %}
+                        No Image
+                        {% endif %}
+                    </td>
+                    <td>{{ stock.product.name }}</td>
+                    <td>{{ stock.product.model }}</td>
+                    <td>{{ stock.product.year }}</td>
+                    <td>{{ stock.quantity }}</td>
+                    <td>{{ stock.price_per_unit_with_dollar }}</td>
+                    <td>{{ stock.total_price_with_dollar }}</td>
+                    <td>{{ stock.updated_at|date:"Y-m-d H:i" }}</td>
+                    <td>{% if stock.is_available %}<span class="badge bg-success">In Stock</span>{% else %}<span class="badge bg-danger">Out of Stock</span>{% endif %}</td>
+                    <td>
+                        <a href="{% url 'dashboard:stock_edit' stock.id %}" class="btn btn-warning btn-sm action-button">Edit</a>
+                    </td>
+                    
+                    
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9">No stock available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if is_paginated and not filters_applied %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query_params %}&{{ query_params }}{% endif %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+    
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <a class="page-link" href="?page={{ num }}{% if query_params %}&{{ query_params }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if query_params %}&{{ query_params }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+    
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query_params %}&{{ query_params }}{% endif %}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+
+
+
+<div class="modal fade" id="addStockModal" tabindex="-1" aria-labelledby="addStockModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addStockModalLabel">Add Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addStockForm" method="post" action="{% url 'dashboard:add_stock' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="product" class="form-label">Product</label>
+                        <select class="form-select" id="product" name="product" required>
+                            <option value="">Select a product</option>
+                            {% for product in products %}
+                            <option value="{{ product.id }}">{{ product.name }} - {{ product.model }} ({{ product.year }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" required min="1">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" id="addStockBtn" class="btn btn-primary">Add Stock</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function printTable() {
+        var printContents = document.getElementById("tableContainer").innerHTML;
+        var originalContents = document.body.innerHTML;
+        document.body.innerHTML = printContents;
+        window.print();
+        document.body.innerHTML = originalContents;
+    }
+
+    function exportToPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4');
+        const table = document.getElementById("stockTable");
+    
+        // Hide action column header and buttons
+        const headerActions = table.querySelector('th:last-child');
+        const actionButtons = table.querySelectorAll('.action-button');
+        
+        if (headerActions) {
+            headerActions.style.display = 'none';
+        }
+    
+        actionButtons.forEach(button => button.style.display = 'none');
+    
+        html2canvas(table).then((canvas) => {
+            const imgData = canvas.toDataURL('image/png');
+            const imgProps = doc.getImageProperties(imgData);
+            const pdfWidth = doc.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            
+            doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            doc.save('stock_list.pdf');
+    
+            // Show action column header and buttons again
+            if (headerActions) {
+                headerActions.style.display = '';
+            }
+    
+            actionButtons.forEach(button => button.style.display = '');
+        });
+    }
+    
+    
+    
+    function clearFilters() {
+        // Redirect to the base URL to clear filters and avoid query parameters
+        window.location.href = '/stocks/';
+    }
+</script>
+
+
+<script>
+    document.getElementById('addStockBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        var productId = document.getElementById('product').value;
+    
+        fetch(`/check-stock-exists/?product_id=${productId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.exists) {
+                    Swal.fire({
+                        title: 'Product Already in Stock',
+                        text: `${data.product_name} ${data.product_model} ${data.product_year} already has ${data.current_quantity} units in stock.`,
+                        icon: 'warning',
+                        confirmButtonColor: '#3085d6',
+                        confirmButtonText: 'OK'
+                    });
+                } else {
+                    document.getElementById('addStockForm').submit();
+                }
+            });
+    });
+</script>
+
+{% endblock %}

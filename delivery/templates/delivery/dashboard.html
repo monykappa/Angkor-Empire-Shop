@@ -1,0 +1,177 @@
+{% extends 'delivery_base.html' %}
+{% load static %}
+{% block content %}
+
+<style>
+    .card-hover:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        transition: box-shadow 0.3s ease-in-out;
+    }
+</style>
+<div class="">
+    <h1 class="mb-4">Dashboard</h1>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card h-100 card-hover">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle-fill text-success fs-1 mb-3"></i>
+                    <h5 class="card-title">Total Completed</h5>
+                    <p class="card-text display-4 fw-bold">{{ total_completed }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 card-hover">
+                <div class="card-body text-center">
+                    <i class="bi bi-hourglass-split text-warning fs-1 mb-3"></i>
+                    <h5 class="card-title">Pending Deliveries</h5>
+                    <p class="card-text display-4 fw-bold">{{ pending_deliveries.count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 card-hover">
+                <div class="card-body text-center">
+                    <i class="bi bi-calendar-check text-info fs-1 mb-3"></i>
+                    <h5 class="card-title">Completed (Last 7 Days)</h5>
+                    <p class="card-text display-4 fw-bold">{{ completed_deliveries.count }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-6">
+            <div class="card card-hover">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">Pending Deliveries</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Assigned At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for assignment in pending_deliveries %}
+                                <tr>
+                                    <td>{{ assignment.order.id }}</td>
+                                    <td>{{ assignment.assigned_at|date:"M d, Y H:i" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="2" class="text-muted">No pending deliveries.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <div class="col-md-6">
+            <div class="card card-hover">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">Recent Completed Deliveries</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Completed At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for history in completed_deliveries %}
+                                <tr>
+                                    <td>{{ history.order.id }}</td>
+                                    <td>{{ history.completed_at|date:"M d, Y H:i" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="2" class="text-muted">No completed deliveries in the last 7 days.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="card">
+        <div id="delivery-chart"></div>
+
+        </div>
+        <div class="card card-hover mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">Daily Completed Deliveries (Last 7 Days)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="dailyCompletedChart" style="height: 300px;"></canvas>
+            </div>
+        </div>
+
+
+
+        <script>
+            // Assume we have the user_id available (e.g., from the user's session or passed from the backend)
+            const user_id = "{{ request.user.id }}";  // This assumes you're using a template engine like Django's
+
+            // Fetch data from the view
+            fetch(`/delivery-by-date/?period=all&user_id=${user_id}`)  // or '7_days' or '1_month'
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error(data.error);
+                        return;
+                    }
+                    var chartJSON = JSON.parse(data.chart);
+                    Plotly.newPlot('delivery-chart', chartJSON.data, chartJSON.layout);
+                });
+        </script>
+
+
+        <script>
+            var ctx = document.getElementById('dailyCompletedChart').getContext('2d');
+            var chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [{% for item in daily_completed %}'{{ item.completed_at__date|date:"M d" }}',{% endfor %}],
+            datasets: [{
+                label: 'Completed Deliveries',
+                data: [{% for item in daily_completed %}{{ item.count }}, {% endfor %}],
+                backgroundColor: 'rgba(0, 123, 255, 0.5)',
+                    borderColor: 'rgba(0, 123, 255, 1)',
+                        borderWidth: 1
+            }]
+        },
+            options: {
+                responsive: true,
+                    maintainAspectRatio: false,
+                        scales: {
+                    y: {
+                        beginAtZero: true,
+                            precision: 0
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+    });
+
+        </script>
+        {% endblock %}

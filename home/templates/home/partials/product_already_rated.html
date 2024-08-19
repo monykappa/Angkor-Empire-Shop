@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <h1>Product Already Rated</h1>
+    <p>It looks like you've already rated this product. Thank you for your feedback!</p>
+    <p>If you need any further assistance or have additional feedback, please contact our support team.</p>
+    <a href="{% url 'home:notifications' %}" class="button">Go to Notifications</a>
+</div>
+{% endblock content %}

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery History Report</title>
+    <style>
+        @page {
+            size: A4 landscape; /* Set the page size to A4 landscape */
+            margin: 20mm; /* Adjust margins as needed */
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 100%;
+            margin: auto;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Delivery History Report</h1>
+        <p>Date Range: {{ date_range }}</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Delivery Staff</th>
+                    <th>Assigned At</th>
+                    <th>Completed At</th>
+                    <th>User</th>
+                    <th>Delivery Address 1</th>
+                    <th>City</th>
+                    <th>Province</th>
+                    <th>Phone</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dh in delivery_histories %}
+                <tr>
+                    <td>{{ dh.order.id }}</td>
+                    <td>{{ dh.delivery_staff.user.username }}</td>
+                    <td>{{ dh.assigned_at }}</td>
+                    <td>{{ dh.completed_at }}</td>
+                    <td>{{ dh.order.user.username }}</td>
+                    <td>{{ dh.order.order_address.address1 }}</td>
+                    <td>{{ dh.order.order_address.city }}</td>
+                    <td>{{ dh.order.order_address.province }}</td>
+                    <td>{{ dh.order.order_address.phone }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

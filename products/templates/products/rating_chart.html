@@ -1,0 +1,31 @@
+{% load static %}
+
+<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+    <style>
+        .bar { fill: #ffa500; }
+        .bar-label { font-size: 16px; font-family: Arial, sans-serif; }
+        .axis { stroke: #ccc; stroke-width: 1; }
+        .chart-title { font-size: 18px; font-family: Arial, sans-serif; text-anchor: middle; }
+    </style>
+    
+    <!-- Chart title -->
+    <text x="400" y="30" class="chart-title">Rating Distribution</text>
+    
+    <!-- Grid lines -->
+    {% for i in "12345" %}
+        <line x1="{{ forloop.counter|add:79|multiply:144 }}" y1="50" x2="{{ forloop.counter|add:79|multiply:144 }}" y2="370" class="axis" />
+    {% endfor %}
+    
+    <!-- Bars and labels -->
+    {% for rating, percentage in rating_percentages.items %}
+        {% with y_position=forloop.counter0|add:1|multiply:60 %}
+            <rect x="80" y="{{ y_position|add:60 }}" width="{% widthratio percentage 100 720 %}" height="40" class="bar" />
+            <text x="{% widthratio percentage 100 720 |add:90 %}" y="{{ y_position|add:85 }}" class="bar-label">{{ rating }} stars ({{ percentage|floatformat:1 }}%)</text>
+        {% endwith %}
+    {% endfor %}
+</svg>
+
+<div class="review-summary mt-2">
+    {{ avg_rating|floatformat:1 }} out of 5
+    <span class="text-muted">({{ reviews.count }} reviews)</span>
+</div>
